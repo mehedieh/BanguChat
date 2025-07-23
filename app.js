@@ -76,16 +76,12 @@ async function findOrCreateChat() {
     // Part 1: Every user listens for a direct invitation to a room.
     myInviteRef.on('value', async (snapshot) => {
         if (snapshot.exists()) {
-            // Invitation received!
             chatRoomId = snapshot.val().roomId;
-
-            // Clean up all listeners, remove self from lobby, and enter the chat.
             myInviteRef.off();
             myInviteRef.remove();
             lobbyRef.off();
-            myLobbyRef.onDisconnect().cancel(); // Cancel the lobby cleanup action
+            myLobbyRef.onDisconnect().cancel();
             myLobbyRef.remove();
-
             await startChat();
         }
     });
@@ -96,16 +92,14 @@ async function findOrCreateChat() {
         username: userName,
         timestamp: firebase.database.ServerValue.TIMESTAMP
     });
-    // Set cleanup action in case user closes tab before being matched.
     myLobbyRef.onDisconnect().remove();
 
     // Listen for changes in the lobby to find partners.
     lobbyRef.on('value', async (snapshot) => {
-        if (chatRoomId) { // We've been matched, so stop this logic.
+        if (chatRoomId) {
             lobbyRef.off();
             return;
         }
-
         const lobbyUsers = snapshot.val();
         if (!lobbyUsers) return;
 
@@ -114,25 +108,17 @@ async function findOrCreateChat() {
         );
 
         if (potentialPartners.length >= 2) {
-            // This user is the "creator"! We found two partners.
-            lobbyRef.off(); // Stop listening to prevent creating more rooms.
-
+            lobbyRef.off();
             const partner1 = potentialPartners[0];
             const partner2 = potentialPartners[1];
-
-            // === CRITICAL FIX: Create a shared, deterministic room ID ===
-            // By sorting the user IDs, all three users will generate the exact same ID.
             const allUserIds = [userId, partner1[0], partner2[0]].sort();
             const newChatRoomId = allUserIds.join('_');
-            // ==========================================================
 
-            // As the creator, we now "invite" the other two users to this room.
             await database.ref(`user_invites/${partner1[0]}`).set({ roomId: newChatRoomId });
             await database.ref(`user_invites/${partner2[0]}`).set({ roomId: newChatRoomId });
 
-            // The creator can now enter the chat themselves using the same ID.
             chatRoomId = newChatRoomId;
-            myInviteRef.off(); // We don't need our own invite listener anymore.
+            myInviteRef.off();
             myLobbyRef.onDisconnect().cancel();
             await startChat();
         }
@@ -170,12 +156,7 @@ function listenForTyping() {
         const typingUsers = snap.val() || {};
         delete typingUsers[userId];
         const names = Object.values(typingUsers).map(u => u.username);
-
-        if (names.length > 0) {
-            typingIndicatorDiv.textContent = `${names.join(', ')} is typing...`;
-        } else {
-            typingIndicatorDiv.textContent = '';
-        }
+        typingIndicatorDiv.textContent = names.length > 0 ? `${names.join(', ')} is typing...` : '';
     });
 }
 
@@ -198,11 +179,17 @@ function listenForRoomClosure() {
 }
 
 //
-// STEP 6: SENDING MESSAGES AND TYPING INDICATORS
+// STEP 6: SENDING MESSAGES AND TYPING INDICATORS (WITH DOUBLE-SEND FIX)
 //
 function sendMessage() {
+    if (sendBtn.disabled) {
+        return;
+    }
     const text = messageInput.value.trim();
-    if (text === '') return;
+    if (text === '') {
+        return;
+    }
+    sendBtn.disabled = true;
 
     const message = {
         senderId: userId,
@@ -211,9 +198,18 @@ function sendMessage() {
         timestamp: firebase.database.ServerValue.TIMESTAMP
     };
 
-    database.ref(`messages/${chatRoomId}`).push(message);
-    database.ref(`chatRooms/${chatRoomId}/typing/${userId}`).remove();
-    messageInput.value = '';
+    database.ref(`messages/${chatRoomId}`).push(message)
+        .then(() => {
+            messageInput.value = '';
+            database.ref(`chatRooms/${chatRoomId}/typing/${userId}`).remove();
+        })
+        .catch((error) => {
+            console.error("Error sending message: ", error);
+        })
+        .finally(() => {
+            sendBtn.disabled = false;
+            messageInput.focus();
+        });
 }
 
 sendBtn.addEventListener('click', sendMessage);
@@ -229,7 +225,7 @@ messageInput.addEventListener('input', () => {
 });
 
 //
-// STEP 7: UI DISPLAY AND ACTIONS
+// STEP 7: UI DISPLAY AND ACTIONS (WITH SCROLL TYPO FIX)
 //
 const userColors = {};
 function getUserAvatar(uid, uname) {
@@ -273,8 +269,10 @@ function displayMessage(msgId, message) {
 
     msgGroup.appendChild(msgContent);
     chatMessagesDiv.appendChild(msgGroup);
-    chatMessagesDiv.scrollTop = chatMessagesД.scrollHeight;
+    // Auto-scroll to the bottom (Typo fixed here)
+    chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
 
+    // Set timer for message to disappear
     setTimeout(() => {
         const elToRemove = document.getElementById(msgId);
         if (elToRemove) {
