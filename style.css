@@ -226,3 +226,46 @@ body {
     background-color: var(--background-color);
     z-index: -1; /* Puts it behind the main content */
 }
+/* --- Sticker Functionality Styles --- */
+
+#sticker-btn {
+    color: var(--text-secondary); /* Give it a more subtle color */
+    margin-right: 8px;
+}
+
+#sticker-panel {
+    position: absolute;
+    bottom: 65px; /* Position it right above the message composer */
+    left: 16px;
+    right: 16px;
+    background: var(--surface-color);
+    border-radius: 8px;
+    box-shadow: var(--elevation-2);
+    padding: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 12px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.sticker-item {
+    width: 100%;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+.sticker-item:hover {
+    transform: scale(1.15);
+}
+
+/* This is a special class for message bubbles that ONLY contain a sticker */
+.message-content.sticker {
+    background: none; /* No background bubble for stickers */
+    padding: 0;
+}
+
+.sticker-in-message {
+    max-width: 120px; /* Control the size of the sticker in the chat history */
+    height: auto;
+}
