@@ -12,7 +12,8 @@ const firebaseConfig = {
     messagingSenderId: "402273986567",
     appId: "1:402273986567:web:e092bedced2d0ef94362a2",
     measurementId: "G-TTKDZYCT23"
-  };
+};
+
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
@@ -32,6 +33,8 @@ const sendBtn = document.getElementById('send-btn');
 const leaveChatBtn = document.getElementById('leave-chat-btn');
 const userPresenceDiv = document.getElementById('user-presence');
 const typingIndicatorDiv = document.getElementById('typing-indicator');
+const stickerBtn = document.getElementById('sticker-btn');
+const stickerPanel = document.getElementById('sticker-panel');
 
 let selectedInterests = [];
 let userId = 'user_' + Math.random().toString(36).substr(2, 9);
@@ -40,9 +43,34 @@ let chatRoomId = null;
 let chatUsers = {};
 let typingTimeout;
 
+// Sticker Data
+const stickers = [
+    'https://raw.githubusercontent.com/google/gemini-pro-chat-bot/main/app/src/main/res/drawable/sticker_1.png',
+    'https://raw.githubusercontent.com/google/gemini-pro-chat-bot/main/app/src/main/res/drawable/sticker_2.png',
+    'https://raw.githubusercontent.com/google/gemini-pro-chat-bot/main/app/src/main/res/drawable/sticker_3.png',
+    'https://raw.githubusercontent.com/google/gemini-pro-chat-bot/main/app/src/main/res/drawable/sticker_4.png',
+    'https://raw.githubusercontent.com/google/gemini-pro-chat-bot/main/app/src/main/res/drawable/sticker_5.png',
+    'https://raw.githubusercontent.com/google/gemini-pro-chat-bot/main/app/src/main/res/drawable/sticker_6.png',
+];
+
 //
-// STEP 3: INTEREST SELECTION LOGIC (VERIFIED AND CORRECT)
+// STEP 3: INITIALIZATION & EVENT LISTENERS
 //
+
+// Populates the sticker panel with clickable stickers
+function initializeStickerPanel() {
+    stickers.forEach(url => {
+        const stickerImg = document.createElement('img');
+        stickerImg.src = url;
+        stickerImg.className = 'sticker-item';
+        stickerImg.addEventListener('click', () => {
+            sendSticker(url);
+            stickerPanel.classList.add('hidden'); // Hide panel after sending
+        });
+        stickerPanel.appendChild(stickerImg);
+    });
+}
+
 interestsList.addEventListener('click', (e) => {
     if (e.target.classList.contains('interest-btn')) {
         const interest = e.target.innerText;
@@ -73,7 +101,7 @@ async function findOrCreateChat() {
     const myLobbyRef = lobbyRef.child(userId);
     const myInviteRef = database.ref(`user_invites/${userId}`);
 
-    // Part 1: Every user listens for a direct invitation to a room.
+    // Part 1: Every user listens for a direct invitation.
     myInviteRef.on('value', async (snapshot) => {
         if (snapshot.exists()) {
             chatRoomId = snapshot.val().roomId;
@@ -94,7 +122,7 @@ async function findOrCreateChat() {
     });
     myLobbyRef.onDisconnect().remove();
 
-    // Listen for changes in the lobby to find partners.
+    // Listen for lobby changes to find partners.
     lobbyRef.on('value', async (snapshot) => {
         if (chatRoomId) {
             lobbyRef.off();
@@ -111,12 +139,15 @@ async function findOrCreateChat() {
             lobbyRef.off();
             const partner1 = potentialPartners[0];
             const partner2 = potentialPartners[1];
+            // CRITICAL FIX: Create a shared ID that is the same for all 3 users.
             const allUserIds = [userId, partner1[0], partner2[0]].sort();
             const newChatRoomId = allUserIds.join('_');
 
+            // Invite the other two users.
             await database.ref(`user_invites/${partner1[0]}`).set({ roomId: newChatRoomId });
             await database.ref(`user_invites/${partner2[0]}`).set({ roomId: newChatRoomId });
 
+            // Enter the chat yourself.
             chatRoomId = newChatRoomId;
             myInviteRef.off();
             myLobbyRef.onDisconnect().cancel();
@@ -179,22 +210,24 @@ function listenForRoomClosure() {
 }
 
 //
-// STEP 6: SENDING MESSAGES AND TYPING INDICATORS (WITH DOUBLE-SEND FIX)
+// STEP 6: SENDING MESSAGES (TEXT & STICKERS) - WITH DOUBLE-SEND FIX
 //
+
+// Sends a text message
 function sendMessage() {
-    if (sendBtn.disabled) {
-        return;
-    }
+    // FIX: Check if the button is already disabled to prevent rapid-fire sends.
+    if (sendBtn.disabled) return;
     const text = messageInput.value.trim();
-    if (text === '') {
-        return;
-    }
+    if (text === '') return;
+    
+    // FIX: Disable the button immediately.
     sendBtn.disabled = true;
 
     const message = {
+        type: 'text',
+        content: text,
         senderId: userId,
         username: userName,
-        text: text,
         timestamp: firebase.database.ServerValue.TIMESTAMP
     };
 
@@ -203,29 +236,39 @@ function sendMessage() {
             messageInput.value = '';
             database.ref(`chatRooms/${chatRoomId}/typing/${userId}`).remove();
         })
-        .catch((error) => {
-            console.error("Error sending message: ", error);
-        })
+        .catch((error) => console.error("Error sending message: ", error))
         .finally(() => {
+            // FIX: Re-enable the button after the operation is complete.
             sendBtn.disabled = false;
             messageInput.focus();
         });
 }
 
+// Sends a sticker message
+function sendSticker(stickerUrl) {
+    const message = {
+        type: 'sticker',
+        content: stickerUrl,
+        senderId: userId,
+        username: userName,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    };
+    database.ref(`messages/${chatRoomId}`).push(message);
+}
+
+// Event Listeners for sending
 sendBtn.addEventListener('click', sendMessage);
 messageInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage(); });
-
 messageInput.addEventListener('input', () => {
     const typingRef = database.ref(`chatRooms/${chatRoomId}/typing/${userId}`);
     typingRef.set({ username: userName });
     clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => {
-        typingRef.remove();
-    }, 2000);
+    typingTimeout = setTimeout(() => typingRef.remove(), 2000);
 });
+stickerBtn.addEventListener('click', () => stickerPanel.classList.toggle('hidden'));
 
 //
-// STEP 7: UI DISPLAY AND ACTIONS (WITH SCROLL TYPO FIX)
+// STEP 7: UI DISPLAY AND ACTIONS
 //
 const userColors = {};
 function getUserAvatar(uid, uname) {
@@ -240,6 +283,7 @@ function getUserAvatar(uid, uname) {
     return avatar;
 }
 
+// Displays both text and sticker messages correctly
 function displayMessage(msgId, message) {
     const msgGroup = document.createElement('div');
     msgGroup.className = 'message-group';
@@ -248,15 +292,22 @@ function displayMessage(msgId, message) {
     const msgContent = document.createElement('div');
     msgContent.className = 'message-content';
 
-    const msgText = document.createElement('p');
-    msgText.className = 'message-text';
-    msgText.textContent = message.text;
+    if (message.type === 'sticker') {
+        msgContent.classList.add('sticker');
+        const stickerImg = document.createElement('img');
+        stickerImg.src = message.content;
+        stickerImg.className = 'sticker-in-message';
+        msgContent.appendChild(stickerImg);
+    } else {
+        const msgText = document.createElement('p');
+        msgText.className = 'message-text';
+        msgText.textContent = message.content;
+        msgContent.appendChild(msgText);
+    }
 
     const msgTime = document.createElement('p');
     msgTime.className = 'message-time';
     msgTime.textContent = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    msgContent.appendChild(msgText);
     msgContent.appendChild(msgTime);
 
     if (message.senderId === userId) {
@@ -269,8 +320,8 @@ function displayMessage(msgId, message) {
 
     msgGroup.appendChild(msgContent);
     chatMessagesDiv.appendChild(msgGroup);
-    // Auto-scroll to the bottom (Typo fixed here)
-    chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+    // FIX: Corrected variable name for auto-scrolling
+    chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight; 
 
     // Set timer for message to disappear
     setTimeout(() => {
@@ -299,3 +350,8 @@ leaveChatBtn.addEventListener('click', () => {
         window.location.reload();
     }
 });
+
+//
+// STEP 8: INITIALIZE THE APP
+//
+initializeStickerPanel();
