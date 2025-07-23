@@ -213,3 +213,16 @@ body {
     background: transparent;
 }
 .send-btn { background: var(--primary-color); }
+/* --- Page Footer Credit --- */
+.page-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    background-color: var(--background-color);
+    z-index: -1; /* Puts it behind the main content */
+}
