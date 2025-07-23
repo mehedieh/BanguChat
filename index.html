@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BanguChat</title>
+    <!-- Link to Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Interest Selection Screen -->
+    <div id="interest-selection-container">
+        <div class="interest-card">
+            <h2 class="card-title">Select Your Interests</h2>
+            <p class="card-subtitle">Choose topics to find a chat with like-minded people.</p>
+            <div id="interests-list">
+                 <!-- Interests will be dynamically populated or hardcoded here -->
+                <button class="interest-btn">Politics</button>
+                <button class="interest-btn">Philosophy</button>
+                <button class="interest-btn">Military Haters</button>
+                <button class="interest-btn">Marxism</button>
+                <button class="interest-btn">Genocide Plan</button>
+                <button class="interest-btn">Government Systems</button>
+                <button class="interest-btn">Film & Music</button>
+            </div>
+            <button id="find-chat-btn" class="material-btn">
+                <span>Find Chat</span>
+                <i class="material-icons">search</i>
+            </button>
+            <div id="loading-indicator" class="hidden">
+                <div class="spinner"></div>
+                <p>Waiting for other users...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div id="chat-container" class="hidden">
+        <header class="chat-header">
+            <div class="header-info">
+                <h3>Group Chat</h3>
+                <div id="user-presence" class="user-presence-container">
+                    <!-- User presence indicators will be added here -->
+                </div>
+            </div>
+            <button id="leave-chat-btn" class="icon-btn" aria-label="Leave Chat">
+                <i class="material-icons">exit_to_app</i>
+            </button>
+        </header>
+
+        <main id="chat-messages"></main>
+
+        <footer class="chat-footer">
+            <div id="typing-indicator"></div>
+            <div class="message-composer">
+                <input type="text" id="message-input" placeholder="Type a message...">
+                <button id="send-btn" class="icon-btn send-btn" aria-label="Send Message">
+                    <i class="material-icons">send</i>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-database.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
