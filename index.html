@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BanguChat</title>
-    <!-- Link to Material Icons -->
+    <title>Bangu Chat</title>
+    <!-- Link to Google Fonts and Material Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -12,17 +13,20 @@
     <!-- Interest Selection Screen -->
     <div id="interest-selection-container">
         <div class="interest-card">
+            <!-- Logo Image -->
+            <img src="logo.png" alt="Chatbox Logo" class="logo-image">
+
             <h2 class="card-title">Select Your Interests</h2>
             <p class="card-subtitle">Choose topics to find a chat with like-minded people.</p>
             <div id="interests-list">
-                 <!-- Interests will be dynamically populated or hardcoded here -->
+                <!-- Interest buttons -->
                 <button class="interest-btn">Politics</button>
-                <button class="interest-btn">Philosophy</button>
-                <button class="interest-btn">Military Haters</button>
+                <button class="interest-btn">NSFW</button>
+                <button class="interest-btn">Military Hate</button>
                 <button class="interest-btn">Marxism</button>
-                <button class="interest-btn">Genocide Plan</button>
+                <button class="interest-btn">Genocide</button>
                 <button class="interest-btn">Government Systems</button>
-                <button class="interest-btn">Film & Music</button>
+                <button class="interest-btn">Random</button>
             </div>
             <button id="find-chat-btn" class="material-btn">
                 <span>Find Chat</span>
@@ -41,7 +45,7 @@
             <div class="header-info">
                 <h3>Group Chat</h3>
                 <div id="user-presence" class="user-presence-container">
-                    <!-- User presence indicators will be added here -->
+                    <!-- User presence indicators will be added here by JS -->
                 </div>
             </div>
             <button id="leave-chat-btn" class="icon-btn" aria-label="Leave Chat">
@@ -52,8 +56,17 @@
         <main id="chat-messages"></main>
 
         <footer class="chat-footer">
+            <!-- The Sticker Panel (initially hidden) -->
+            <div id="sticker-panel" class="hidden">
+                <!-- Stickers will be dynamically added here by JavaScript -->
+            </div>
+
             <div id="typing-indicator"></div>
             <div class="message-composer">
+                <!-- Sticker Button -->
+                <button id="sticker-btn" class="icon-btn" aria-label="Open Stickers">
+                    <i class="material-icons">sentiment_satisfied_alt</i>
+                </button>
                 <input type="text" id="message-input" placeholder="Type a message...">
                 <button id="send-btn" class="icon-btn send-btn" aria-label="Send Message">
                     <i class="material-icons">send</i>
@@ -67,9 +80,10 @@
     <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-database.js"></script>
     <script src="app.js"></script>
 
-     <!-- DEVELOPER CREDIT FOOTER -->
+    <!-- Developer Credit Footer -->
     <footer class="page-footer">
         Developed by Mehedi Ackerman
     </footer>
+
 </body>
 </html>
